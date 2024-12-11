@@ -44,6 +44,10 @@ haulerJobs:
         name: hauler-manifest.yaml
       # - path: /path/to/additional-manifests.yaml
       #   name: additional-manifests.yaml
+      #
+  localhauls:
+    enabled: true
+    hostPath: /usr/local/registry
 
 # Helm Chart Values for the Hauler Fileserver
 # Docs: https://rancherfederal.github.io/hauler-docs/docs/guides-references/command-line/hauler-store#hauler-store-serve-fileserver

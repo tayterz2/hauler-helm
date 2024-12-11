@@ -124,3 +124,43 @@ spec:
           persistentVolumeClaim:
             claimName: hauler-data
 {{- end }}
+---
+{{- if .Values.haulerJobs.localhauls.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hauler-localhauls-job
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "hauler.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      containers:
+        - name: hauler-fetch-localhauls
+          image: {{ .Values.haulerJobs.image.repository }}:{{ .Values.haulerJobs.image.tag }}
+          imagePullPolicy: {{ .Values.haulerJobs.imagePullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              ls -lha /store &&
+              cp -r /hauls/* /store/ &&
+              chown -R 1001:1001 /store &&
+              ls -lha /store &&
+              echo hauler fetch completed
+          volumeMounts:
+            - name: hauler-data
+              mountPath: /store
+            - name: host-data
+              mountPath: /hauls
+          securityContext:
+            runAsUser: 0
+      restartPolicy: OnFailure
+      volumes:
+        - name: hauler-data
+          persistentVolumeClaim:
+            claimName: hauler-data
+        - name: host-data
+          hostPath:
+            path: {{ .Valuus.haulerJobs.localhauls.hostPath }}
+{{- end }}
