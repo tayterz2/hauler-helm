@@ -48,6 +48,20 @@ spec:
             seccompProfile:
               type: RuntimeDefault
         {{- end }}
+        {{- if .Values.haulerJobs.localhauls.enabled }}
+        - name: wait-for-hauler-localhauls-job
+          image: {{ .Values.hauler.initContainers.image.repository }}:{{ .Values.hauler.initContainers.image.tag }}
+          imagePullPolicy: {{ .Values.hauler.initContainers.imagePullPolicy }}
+          args: ["wait", "--for=condition=complete", "job", "hauler-localhauls-job", "--namespace", "{{ .Release.Namespace }}", "--timeout={{ .Values.hauler.initContainers.timeout }}"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+        {{- end }}
       {{- end }}
       containers:
         - name: hauler-registry
