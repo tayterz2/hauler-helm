@@ -162,5 +162,5 @@ spec:
             claimName: hauler-data
         - name: host-data
           hostPath:
-            path: {{ .Valuus.haulerJobs.localhauls.hostPath }}
+            path: {{ .Values.haulerJobs.localhauls.hostPath }}
 {{- end }}
