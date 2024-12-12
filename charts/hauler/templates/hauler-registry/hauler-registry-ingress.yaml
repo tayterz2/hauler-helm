@@ -4,8 +4,8 @@ kind: Ingress
 metadata:
   annotations:
     annotations:
-    {{- range $key, $value := .Values.ingress.annotations }}
-      {{ $key }}: {{ $value | quote }}
+    {{- range $key, $value := .Values.haulerRegistry.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
     {{- end }}
   name: hauler-registry
   namespace: {{ .Release.Namespace }}
