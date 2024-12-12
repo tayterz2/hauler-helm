@@ -2,6 +2,11 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  annotations:
+    annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
   name: hauler-registry
   namespace: {{ .Release.Namespace }}
   labels:
