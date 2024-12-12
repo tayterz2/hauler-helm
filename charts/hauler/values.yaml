@@ -45,8 +45,10 @@ haulerJobs:
       # - path: /path/to/additional-manifests.yaml
       #   name: additional-manifests.yaml
       #
+
+  # use this when copying hauls in directly to a host - hostPath is the "-s" argument to hauler store
   localhauls:
-    enabled: true
+    enabled: false
     hostPath: /usr/local/registry
 
 # Helm Chart Values for the Hauler Fileserver
