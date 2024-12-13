@@ -18,7 +18,7 @@ spec:
         app: hauler-registry
         {{- include "hauler.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if or .Values.haulerJobs.hauls.enabled .Values.haulerJobs.manifests.enabled }}
+      {{- if or .Values.haulerJobs.hauls.enabled .Values.haulerJobs.manifests.enabled .Values.haulerJobs.localhauls.enabled }}
       initContainers:
         {{- if .Values.haulerJobs.hauls.enabled }}
         - name: wait-for-hauler-hauls-job
