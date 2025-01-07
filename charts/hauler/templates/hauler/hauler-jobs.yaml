@@ -143,11 +143,20 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
+            {{- if .Values.haulerJobs.localhauls.storePath }}
               ls -lha /store &&
               cp -r /hauls/* /store/ &&
               chown -R 1001:1001 /store &&
               ls -lha /store &&
-              echo hauler fetch completed
+              echo hauler whole-store load completed
+            {{- end }}
+            {{- if .Values.haulerJobs.localhauls.haulFiles }}
+              ls -lha /store &&
+              USER=hauler hauler store load -s /store {{ .Values.haulerJobs.localhauls.haulFiles }}
+              chown -R 1001:1001 /store &&
+              ls -lha /store &&
+              echo hauler haul file load completed
+            {{- end }}
           volumeMounts:
             - name: hauler-data
               mountPath: /store
@@ -162,5 +171,7 @@ spec:
             claimName: hauler-data
         - name: host-data
           hostPath:
-            path: {{ .Values.haulerJobs.localhauls.hostPath }}
+            {{- if .Values.haulerJobs.localhauls.storePath }}
+            path: {{ .Values.haulerJobs.localhauls.storePath }}
+            {{- end }}
 {{- end }}
