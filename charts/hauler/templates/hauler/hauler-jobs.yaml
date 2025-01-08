@@ -144,17 +144,15 @@ spec:
           args:
             - |
             {{- if .Values.haulerJobs.localhauls.storePath }}
-              ls -lha /stores /store    &&
+              ls -lha /stores           &&
               cp -r /stores/* /store/   &&
               chown -R 1001:1001 /store &&
-              ls -lha /store &&
               echo hauler whole-store load completed
             {{- end }}
             {{- if .Values.haulerJobs.localhauls.haulFiles }}
-              ls -lha /store /haulfiles &&
-              USER=hauler hauler store load -s /store /haulfiles/*  &&
+              ls -lha /haulfiles/*.zst  &&
+              USER=hauler hauler store load -s /store /haulfiles/*.zst  --ignore-errors &&
               chown -R 1001:1001 /store &&
-              ls -lha /store &&
               echo hauler haul file load completed
             {{- end }}
           volumeMounts:

@@ -46,11 +46,14 @@ haulerJobs:
       #   name: additional-manifests.yaml
       #
 
-  # use this when copying hauls in directly to a host - storePath is the "-s" argument to hauler store OR haulFiles is the "hauls" directory to load in
+  # use this when copying haulfiles or stores in directly to a host
+  # storePath is the "-s" argument to hauler store
+  # haulFiles is the "hauls" directory (containing zst files) to load
+  # at least one of storePath or haulFiles must be populated, using both will copy in the store then load the haul files
   localhauls:
     enabled: false
-    storePath: /my/previously/created/hauler/store/dir/
-    haulFiles: /haul/files/to/load/dir/
+    #storePath: /my/previously/created/hauler/store/dir/  # leave commented out if unused
+    #haulFiles: /haul/files/to/load/dir/                  # leave commented out if unused
 
 # Helm Chart Values for the Hauler Fileserver
 # Docs: https://rancherfederal.github.io/hauler-docs/docs/guides-references/command-line/hauler-store#hauler-store-serve-fileserver
