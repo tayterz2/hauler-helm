@@ -144,15 +144,15 @@ spec:
           args:
             - |
             {{- if .Values.haulerJobs.localhauls.storePath }}
-              ls -lha /store &&
-              cp -r /hauls/* /store/ &&
+              ls -lha /stores /store    &&
+              cp -r /stores/* /store/   &&
               chown -R 1001:1001 /store &&
               ls -lha /store &&
               echo hauler whole-store load completed
             {{- end }}
             {{- if .Values.haulerJobs.localhauls.haulFiles }}
-              ls -lha /store &&
-              USER=hauler hauler store load -s /store {{ .Values.haulerJobs.localhauls.haulFiles }}
+              ls -lha /store /haulfiles &&
+              USER=hauler hauler store load -s /store /haulfiles/*  &&
               chown -R 1001:1001 /store &&
               ls -lha /store &&
               echo hauler haul file load completed
@@ -160,8 +160,14 @@ spec:
           volumeMounts:
             - name: hauler-data
               mountPath: /store
-            - name: host-data
-              mountPath: /hauls
+            {{- if .Values.haulerJobs.localhauls.storePath }}
+            - name: store-data
+              mountPath: /stores
+            {{- end }}
+            {{- if .Values.haulerJobs.localhauls.haulFiles }}
+            - name: haul-files
+              mountPath: /haulfiles
+            {{- end }}
           securityContext:
             runAsUser: 0
       restartPolicy: OnFailure
@@ -169,9 +175,14 @@ spec:
         - name: hauler-data
           persistentVolumeClaim:
             claimName: hauler-data
-        - name: host-data
+        {{- if .Values.haulerJobs.localhauls.storePath }}
+        - name: store-data
           hostPath:
-            {{- if .Values.haulerJobs.localhauls.storePath }}
             path: {{ .Values.haulerJobs.localhauls.storePath }}
-            {{- end }}
+        {{- end }}
+        {{- if .Values.haulerJobs.localhauls.haulFiles }}
+        - name: haul-files
+          hostPath:
+            path: {{ .Values.haulerJobs.localhauls.haulFiles }}
+        {{- end }}
 {{- end }}
