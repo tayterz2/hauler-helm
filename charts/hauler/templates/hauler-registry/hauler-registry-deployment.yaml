@@ -18,13 +18,11 @@ spec:
         app: hauler-registry
         {{- include "hauler.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if or .Values.haulerJobs.hauls.enabled .Values.haulerJobs.manifests.enabled .Values.haulerJobs.localhauls.enabled }}
+    {{- if and (or .Values.haulerJobs.remote .Values.haulerJobs.local) (or (and .Values.haulerJobs.local .Values.haulerJobs.local.path) (and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts (gt (len .Values.haulerJobs.remote.artifacts) 0)) (and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests (gt (len .Values.haulerJobs.remote.manifests) 0))  (and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0)) (and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0))  ) }}
       initContainers:
-        {{- if .Values.haulerJobs.hauls.enabled }}
-        - name: wait-for-hauler-hauls-job
-          image: {{ .Values.hauler.initContainers.image.repository }}:{{ .Values.hauler.initContainers.image.tag }}
+        - name: wait-for-hauler-loader
           imagePullPolicy: {{ .Values.hauler.initContainers.imagePullPolicy }}
-          args: ["wait", "--for=condition=complete", "job", "hauler-hauls-job", "--namespace", "{{ .Release.Namespace }}", "--timeout={{ .Values.hauler.initContainers.timeout }}"]
+          args: ["wait", "--for=condition=complete", "job", "hauler-loader", "--namespace", "{{ .Release.Namespace }}", "--timeout={{ .Values.hauler.initContainers.timeout }}"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -33,35 +31,6 @@ spec:
             runAsUser: 1001
             seccompProfile:
               type: RuntimeDefault
-        {{- end }}
-        {{- if .Values.haulerJobs.manifests.enabled }}
-        - name: wait-for-hauler-manifests-job
-          image: {{ .Values.hauler.initContainers.image.repository }}:{{ .Values.hauler.initContainers.image.tag }}
-          imagePullPolicy: {{ .Values.hauler.initContainers.imagePullPolicy }}
-          args: ["wait", "--for=condition=complete", "job", "hauler-manifests-job", "--namespace", "{{ .Release.Namespace }}", "--timeout={{ .Values.hauler.initContainers.timeout }}"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-        {{- end }}
-        {{- if .Values.haulerJobs.localhauls.enabled }}
-        - name: wait-for-hauler-localhauls-job
-          image: {{ .Values.hauler.initContainers.image.repository }}:{{ .Values.hauler.initContainers.image.tag }}
-          imagePullPolicy: {{ .Values.hauler.initContainers.imagePullPolicy }}
-          args: ["wait", "--for=condition=complete", "job", "hauler-localhauls-job", "--namespace", "{{ .Release.Namespace }}", "--timeout={{ .Values.hauler.initContainers.timeout }}"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-        {{- end }}
       {{- end }}
       containers:
         - name: hauler-registry

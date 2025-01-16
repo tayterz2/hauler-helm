@@ -1,8 +1,8 @@
-{{- if .Values.haulerJobs.hauls.enabled }}
+{{- if and (or .Values.haulerJobs.remote .Values.haulerJobs.local) (or (and .Values.haulerJobs.local .Values.haulerJobs.local.path) (and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts (gt (len .Values.haulerJobs.remote.artifacts) 0)) (and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests (gt (len .Values.haulerJobs.remote.manifests) 0))  (and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0)) (and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0))  ) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: hauler-hauls-job
+  name: hauler-loader
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "hauler.labels" . | nindent 4 }}
@@ -10,104 +10,62 @@ spec:
   template:
     spec:
       initContainers:
-        - name: hauler-fetch-hauls
+        - name: hauler-fetch
           image: {{ .Values.haulerJobs.image.repository }}:{{ .Values.haulerJobs.image.tag }}
           imagePullPolicy: {{ .Values.haulerJobs.imagePullPolicy }}
           command: ["/bin/sh", "-c"]
           args:
             - |
-              {{- range .Values.haulerJobs.hauls.artifacts }}
-              curl -o /hauls/{{ .name }} {{ .path }} &&
+              {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.store }}
+              cp -vr /local-store/* /store/   &&
+              chown -R 1001:1001 /store &&
               {{- end }}
-              echo hauler fetch completed
-          volumeMounts:
-            - name: hauler-data
-              mountPath: /hauls
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-      containers:
-        - name: hauler-load-hauls
-          image: {{ .Values.hauler.image.repository }}:{{ .Values.hauler.image.tag }}
-          imagePullPolicy: {{ .Values.hauler.imagePullPolicy }}
-          args:
-            - "store"
-            - "load"
-            {{- range .Values.haulerJobs.hauls.artifacts }}
-            - "/hauls/{{ .name }}"
-            {{- end }}
-          volumeMounts:
-            - name: hauler-data
-              mountPath: /hauls
-            - name: hauler-data
-              mountPath: /store
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-      restartPolicy: OnFailure
-      volumes:
-        - name: hauler-data
-          persistentVolumeClaim:
-            claimName: hauler-data
-{{- end }}
----
-{{- if .Values.haulerJobs.manifests.enabled }}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: hauler-manifests-job
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "hauler.labels" . | nindent 4 }}
-spec:
-  template:
-    spec:
-      initContainers:
-        - name: hauler-fetch-manifests
-          image: {{ .Values.haulerJobs.image.repository }}:{{ .Values.haulerJobs.image.tag }}
-          imagePullPolicy: {{ .Values.haulerJobs.imagePullPolicy }}
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              {{- range .Values.haulerJobs.manifests.artifacts }}
+              {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts }}
+              {{- range .Values.haulerJobs.local.artifacts }}
+              cp -v /tmp/local-artifact-{{ .name }} /artifacts/ &&
+              {{- end}}
+              {{- end}}
+              {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.manifests }}
+              {{- range .Values.haulerJobs.local.manifests }}
+              cp -v /tmp/local-manifest-{{ .name }} /manifests/ &&
+              {{- end}}
+              {{- end}}
+              {{- if and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts }}
+              {{- range .Values.haulerJobs.remote.artifacts }}
+              curl -o /artifacts/{{ .name }} {{ .path }} &&
+              {{- end }}
+              {{- end }}
+              {{- if and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests }}
+              {{- range .Values.haulerJobs.remote.manifests }}
               curl -o /manifests/{{ .name }} {{ .path }} &&
               {{- end }}
+              {{- end }}
               echo hauler fetch completed
           volumeMounts:
-            - name: hauler-data
-              mountPath: /manifests
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-      containers:
-        - name: hauler-load-manifests
-          image: {{ .Values.hauler.image.repository }}:{{ .Values.hauler.image.tag }}
-          imagePullPolicy: {{ .Values.hauler.imagePullPolicy }}
-          args:
-            {{- range .Values.haulerJobs.manifests.artifacts }}
-            - "store"
-            - "sync"
-            - "--files"
-            - "/manifests/{{ .name }}"
+            {{- if or (and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts (gt (len .Values.haulerJobs.remote.artifacts) 0)) (and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0)) }}
+            - name: artifact-data
+              mountPath: /artifacts
             {{- end }}
-          volumeMounts:
-            - name: hauler-data
+            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0) }}
+            {{- range .Values.haulerJobs.local.artifacts }}
+            - name: local-artifact-{{ .name }}
+              mountPath: /tmp/local-artifact-{{ .name }}
+            {{- end }}
+            {{- end }}
+            {{- if or (and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests (gt (len .Values.haulerJobs.remote.manifests) 0)) (and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0)) }}
+            - name: manifest-data
               mountPath: /manifests
+            {{- end }}
+            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0) }}
+            {{- range .Values.haulerJobs.local.manifests }}
+            - name: local-manifest-{{ .name }}
+              mountPath: /tmp/local-manifest-{{ .name }}
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.store }}
+            - name: store-data
+              mountPath: /local-store
+            {{- end }}
             - name: hauler-data
               mountPath: /store
           securityContext:
@@ -118,69 +76,87 @@ spec:
             runAsUser: 1001
             seccompProfile:
               type: RuntimeDefault
-      restartPolicy: OnFailure
-      volumes:
-        - name: hauler-data
-          persistentVolumeClaim:
-            claimName: hauler-data
-{{- end }}
----
-{{- if .Values.haulerJobs.localhauls.enabled }}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: hauler-localhauls-job
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "hauler.labels" . | nindent 4 }}
-spec:
-  template:
-    spec:
       containers:
-        - name: hauler-fetch-localhauls
-          image: {{ .Values.haulerJobs.image.repository }}:{{ .Values.haulerJobs.image.tag }}
-          imagePullPolicy: {{ .Values.haulerJobs.imagePullPolicy }}
+        - name: hauler-load
+          image: {{ .Values.hauler.image.repository }}:{{ .Values.hauler.image.tag }}
+          imagePullPolicy: {{ .Values.hauler.imagePullPolicy }}
           command: ["/bin/sh", "-c"]
           args:
             - |
-            {{- if .Values.haulerJobs.localhauls.storePath }}
-              ls -lha /stores           &&
-              cp -r /stores/* /store/   &&
-              chown -R 1001:1001 /store &&
-              echo hauler whole-store load completed
+            {{- if and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts (gt (len .Values.haulerJobs.remote.artifacts) 0) }}
+            {{- range .Values.haulerJobs.remote.artifacts }}
+              hauler store load /artifacts/{{ .name }} &&
             {{- end }}
-            {{- if .Values.haulerJobs.localhauls.haulFiles }}
-              ls -lha /haulfiles/*.zst  &&
-              USER=hauler hauler store load -s /store /haulfiles/*.zst  --ignore-errors &&
-              chown -R 1001:1001 /store &&
-              echo hauler haul file load completed
             {{- end }}
+            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0) }}
+            {{- range .Values.haulerJobs.local.artifacts }}
+              hauler store load /artifacts/{{ .name }} &&
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests (gt (len .Values.haulerJobs.remote.manifests) 0) }}
+            {{- range .Values.haulerJobs.remote.manifests }}
+              hauler store sync --files /manifests/{{ .name }} &&
+            {{- end }}
+            {{- end }}
+            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0) }}
+            {{- range .Values.haulerJobs.local.manifests }}
+              hauler store sync --files /manifests/{{ .name }} &&
+            {{- end }}
+            {{- end }}
+              echo hauler load completed
           volumeMounts:
+            {{- if and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts (gt (len .Values.haulerJobs.remote.artifacts) 0) }}
+            - name: artifact-data
+              mountPath: /artifacts
+            {{- end }}
+            {{- if and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests (gt (len .Values.haulerJobs.remote.manifests) 0) }}
+            - name: manifest-data
+              mountPath: /manifests
+            {{- end }}
+            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.store }}
+            - name: store-data
+              mountPath: /local-store
+            {{- end }}
             - name: hauler-data
               mountPath: /store
-            {{- if .Values.haulerJobs.localhauls.storePath }}
-            - name: store-data
-              mountPath: /stores
-            {{- end }}
-            {{- if .Values.haulerJobs.localhauls.haulFiles }}
-            - name: haul-files
-              mountPath: /haulfiles
-            {{- end }}
           securityContext:
-            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
       restartPolicy: OnFailure
       volumes:
+        {{- if or (and .Values.haulerJobs.remote .Values.haulerJobs.remote.artifacts (gt (len .Values.haulerJobs.remote.artifacts) 0)) (and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0)) }}
+        - name: artifact-data
+          emptyDir:
+        {{- end }}
+        {{- if (and .Values.haulerJobs.local .Values.haulerJobs.local.artifacts (gt (len .Values.haulerJobs.local.artifacts) 0)) }}
+        {{- range .Values.haulerJobs.local.artifacts }}
+        - name: local-artifact-{{ .name }}
+          hostPath: 
+            path: {{ .path }}
+        {{- end }}
+        {{- end }}
+        {{- if or (and .Values.haulerJobs.remote .Values.haulerJobs.remote.manifests (gt (len .Values.haulerJobs.remote.manifests) 0)) (and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0)) }}
+        - name: manifest-data
+          emptyDir:
+        {{- end }}
+        {{- if (and .Values.haulerJobs.local .Values.haulerJobs.local.manifests (gt (len .Values.haulerJobs.local.manifests) 0)) }}
+        {{- range .Values.haulerJobs.local.manifests }}
+        - name: local-manifest-{{ .name }}
+          hostPath: 
+            path: {{ .path }}
+        {{- end }}
+        {{- end }}
+        {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.store }}
+        - name: store-data
+          hostPath:
+            path: {{ .Values.haulerJobs.local.store }}
+        {{- end }}
         - name: hauler-data
           persistentVolumeClaim:
             claimName: hauler-data
-        {{- if .Values.haulerJobs.localhauls.storePath }}
-        - name: store-data
-          hostPath:
-            path: {{ .Values.haulerJobs.localhauls.storePath }}
-        {{- end }}
-        {{- if .Values.haulerJobs.localhauls.haulFiles }}
-        - name: haul-files
-          hostPath:
-            path: {{ .Values.haulerJobs.localhauls.haulFiles }}
-        {{- end }}
 {{- end }}
