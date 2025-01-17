@@ -62,7 +62,6 @@ haulerJobs:
 # Helm Chart Values for the Hauler Fileserver
 # Docs: https://rancherfederal.github.io/hauler-docs/docs/guides-references/command-line/hauler-store#hauler-store-serve-fileserver
 #
-
 haulerFileserver:
   enabled: true
   port: 8080 # default port for the fileserver
