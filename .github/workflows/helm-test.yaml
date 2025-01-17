@@ -1,6 +1,6 @@
 name: Lint and Test Charts
 
-on: commit
+on: push
 
 jobs:
   lint-test:
