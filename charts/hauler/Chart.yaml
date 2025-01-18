@@ -5,3 +5,8 @@ icon: https://raw.githubusercontent.com/hauler-dev/hauler/main/static/rgs-hauler
 name: hauler-helm
 type: application
 version: 1.2.0
+maintainers:
+  - name: zackbradys
+    email: zackbrady123@gmail.com
+  - name: tayterz2
+    email: taylor.shrauner-biggs@ranchergovernment.com
