@@ -62,14 +62,14 @@ spec:
             httpGet:
               path: /
               port: {{ .Values.haulerFileserver.port }}
-            initialDelaySeconds: 5
+            initialDelaySeconds: 180
             periodSeconds: 10
             failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /
               port: {{ .Values.haulerFileserver.port }}
-            initialDelaySeconds: 10
+            initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 5
 
