@@ -68,8 +68,8 @@ spec:
           livenessProbe:
             httpGet:
               path: /
+              port: {{ .Values.haulerRegistry.port }}
             initialDelaySeconds: {{ .Values.haulerRegistry.delayStart | default 10 }}
-            initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 5
 
