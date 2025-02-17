@@ -75,7 +75,7 @@ spec:
           startupProbe:
             httpGet:
               path: /
-              port: {{ .Values.haulerFileserver.port }}
+              port: {{ .Values.haulerRegistry.port }}
             initialDelaySeconds: 15
             periodSeconds: 15
             failureThreshold: {{ .Values.haulerFileserver.delayStart | default 10 }}
