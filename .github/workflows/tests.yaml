@@ -3,6 +3,9 @@ name: Lint and Test Workflow
 on:
   workflow_dispatch:
   push:
+  pull_request:
+    branches:
+      - 'main'
 
 jobs:
   test-hauler-helm:
