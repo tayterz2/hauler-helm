@@ -113,12 +113,12 @@ jobs:
                 for container in hauler-fetch hauler-load
                 do
                 echo $container container in hauler-loader job logs:
-                kubectl logs --tail=100 -n $namespace -l=batch.kubernetes.io/job-name=hauler-loader -c $container
+                kubectl logs --tail=100 -n $namespace -l=batch.kubernetes.io/job-name=hauler-loader -c ${container}  || echo No logs for $namespace / $container
                 done
                 for container in hauler-fileserver hauler-registry
                 do
                   echo $container pod logs:
-                  kubectl logs --tail=100 -n $namespace -lapp=${container} -c ${container}
+                  kubectl logs --tail=100 -n $namespace -lapp=${container} -c ${container}  || echo No logs for $namespace / $container
                 done
               done
               echo COUNTER = $COUNTER, fileservers failed to start
@@ -170,12 +170,12 @@ jobs:
               for container in hauler-fetch hauler-load
               do
               echo $container container in hauler-loader job logs:
-              kubectl logs --tail=100 -n $namespace -l=batch.kubernetes.io/job-name=hauler-loader -c $container
+              kubectl logs --tail=100 -n $namespace -l=batch.kubernetes.io/job-name=hauler-loader -c ${container} || echo No logs for $namespace / $container
               done
               for container in hauler-fileserver hauler-registry
               do
                 echo $container pod logs:
-                kubectl logs --tail=100 -n $namespace -lapp=${container} -c ${container}
+                kubectl logs --tail=100 -n $namespace -lapp=${container} -c ${container}  || echo No logs for $namespace / $container
               done
             done
             exit 1
