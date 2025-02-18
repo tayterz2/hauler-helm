@@ -78,7 +78,7 @@ spec:
               port: {{ .Values.haulerRegistry.port }}
             initialDelaySeconds: 15
             periodSeconds: 15
-            failureThreshold: {{ .Values.haulerFileserver.delayStart | default 10 }}
+            failureThreshold: {{ .Values.haulerRegistry.delayStart | default 0 }}
 
       restartPolicy: Always
       serviceAccountName: hauler-service-account
