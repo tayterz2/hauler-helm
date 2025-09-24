@@ -108,10 +108,6 @@ spec:
             - name: manifest-data
               mountPath: /manifests
             {{- end }}
-            {{- if and .Values.haulerJobs.local .Values.haulerJobs.local.store }}
-            - name: store-data
-              mountPath: /local-store
-            {{- end }}
             - name: hauler-data
               mountPath: /store
           securityContext:
